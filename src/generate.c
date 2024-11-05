@@ -35,8 +35,6 @@ int Generate(
     for (int i = 0; i <= Ny; ++i) {
         for (int j = 0; j <= Nx; ++j) {
             int cur_node = i * (Nx + 1) + j;
-            int cur_cell = i * Nx + j;
-            int under_node = (i + 1) * (Nx + 1) + j;
 
 #ifdef DEBUG
             #pragma omp critical

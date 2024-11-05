@@ -83,9 +83,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Поток только для отладочной информации (массивы, векторы и т.д.)
-    FILE* debug_out = debug_output ? out : stderr;
-
     int result = Generate(Nx, Ny, K1, K2, T, &IA, &JA, &N, out);
     if (result != 0) {
         fprintf(stderr, "generate error: failed to generate matrix\n");
