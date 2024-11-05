@@ -107,10 +107,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    double eps = 1e-10;  // точность
-    int maxit = 10000;   // максимальное число итераций
-    int iterations;      // фактическое число итераций
-    double residual;     // невязка
+    double eps = 1e-5;    // точность
+    int maxit = 1000;   // максимальное число итераций
+    int iterations;       // фактическое число итераций
+    double residual;      // невязка
 
     Solve(A, b, x, N, IA, JA, eps, maxit, &iterations, &residual, T, out);
 
