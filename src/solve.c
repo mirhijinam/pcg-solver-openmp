@@ -30,9 +30,12 @@ void spmv_seq(
     int* JA,
     double* A,
     double* x,
-    double* y
+    double* y,
+    FILE* out
 ) {
+#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
+#endif
     
     for (int i = 0; i < N; ++i) {
         y[i] = 0.0;
@@ -41,29 +44,30 @@ void spmv_seq(
         }
     }
     
-    double end_time = omp_get_wtime();
-
 #ifdef DBG_SOLVER
-    fprintf(stderr, "spmv_seq time: %f seconds\n", end_time - start_time);
+    double end_time = omp_get_wtime();
+    fprintf(out, "spmv_seq time: %f seconds\n", end_time - start_time);
 #endif
 }
 
 double dot_seq(
     int N,
     double* x,
-    double* y
+    double* y,
+    FILE* out
 ) {
+#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
+#endif
     
     double result = 0.0;
     for (int i = 0; i < N; ++i) {
         result += x[i] * y[i];
     }
     
-    double end_time = omp_get_wtime();
-
 #ifdef DBG_SOLVER
-    fprintf(stderr, "dot_seq time: %f seconds\n", end_time - start_time);
+    double end_time = omp_get_wtime();
+    fprintf(out, "dot_seq time: %f seconds\n", end_time - start_time);
 #endif
     
     return result;
@@ -73,18 +77,20 @@ void axpy_seq(
     int N,
     double alpha,
     double* x,
-    double* y
+    double* y,
+    FILE* out
 ) {
+#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
+#endif
     
     for (int i = 0; i < N; ++i) {
         y[i] += alpha * x[i];
     }
     
-    double end_time = omp_get_wtime();
-
 #ifdef DBG_SOLVER
-    fprintf(stderr, "axpy_seq time: %f seconds\n", end_time - start_time);
+    double end_time = omp_get_wtime();
+    fprintf(out, "axpy_seq time: %f seconds\n", end_time - start_time);
 #endif
 }
 
@@ -93,21 +99,23 @@ void axpy(
     double alpha,
     double* x,
     double* y,
-    int T
+    int T,
+    FILE* out
 ) {
     omp_set_num_threads(T);
 
+#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
+#endif
     
     #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
         y[i] += alpha * x[i];
     }
     
-    double end_time = omp_get_wtime();
-
 #ifdef DBG_SOLVER
-    fprintf(stderr, "axpy time: %f seconds\n", end_time - start_time);
+    double end_time = omp_get_wtime();
+    fprintf(out, "axpy time: %f seconds\n", end_time - start_time);
 #endif
 }
 
@@ -115,11 +123,14 @@ double dot(
     int N,
     double* x,
     double* y,
-    int T
+    int T,
+    FILE* out
 ) {
     omp_set_num_threads(T);
 
+#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
+#endif
     
     double result = 0.0;
     #pragma omp parallel
@@ -133,10 +144,9 @@ double dot(
         result += local_sum;
     }
 
-    double end_time = omp_get_wtime();
-
 #ifdef DBG_SOLVER
-    fprintf(stderr, "dot time: %f seconds\n", end_time - start_time);
+    double end_time = omp_get_wtime();
+    fprintf(out, "dot time: %f seconds\n", end_time - start_time);
 #endif
     
     return result;
@@ -149,11 +159,14 @@ void spmv(
     double* A,
     double* x,
     double* y,
-    int T
+    int T,
+    FILE* out
 ) {
     omp_set_num_threads(T);
 
+#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
+#endif
     
     #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
@@ -164,9 +177,9 @@ void spmv(
         y[i] = sum;
     }
     
-    double end_time = omp_get_wtime();
 #ifdef DBG_SOLVER
-    fprintf(stderr, "spmv time: %f seconds\n", end_time - start_time);
+    double end_time = omp_get_wtime();
+    fprintf(out, "spmv time: %f seconds\n", end_time - start_time);
 #endif
 }
 
@@ -181,7 +194,8 @@ void Solve(
     int maxit,
     int* n,
     double* res,
-    int T
+    int T,
+    FILE* out
 ) {
     omp_set_num_threads(T);
 
@@ -195,7 +209,7 @@ void Solve(
     double* M = (double*)malloc(N * sizeof(double));
 
     if (!r || !z || !p || !q || !M) {
-        fprintf(stderr, "failed to allocate memory in Solve\n");
+        fprintf(out, "failed to allocate memory in Solve\n");
         return;
     }
 
@@ -211,7 +225,7 @@ void Solve(
         }
     }
     end_phase = omp_get_wtime();
-    fprintf(stderr, "Phase 6 (inverse preconditioner) time: %f seconds\n", end_phase - start_phase);
+    fprintf(out, "Phase 6 (inverse preconditioner) time: %f seconds\n", end_phase - start_phase);
 
     start_phase = omp_get_wtime();
     // x_0 = 0 и r_0 = b
@@ -221,7 +235,7 @@ void Solve(
         r[i] = b[i];
     }
 
-    double rho, rho_prev, alpha, beta;
+    double rho = 0.0, rho_prev = 0.0, alpha = 0.0, beta = 0.0;  // инициализируем все переменные
     int k = 0;
 
     do {
@@ -234,7 +248,7 @@ void Solve(
         }
 
         // rho_k = (r_k-1,z_k)
-        rho = dot(N, r, z, T);
+        rho = dot(N, r, z, T, out);
 
         if (k == 1) {
             // p_k = z_k
@@ -245,7 +259,7 @@ void Solve(
         } else {
             beta = rho / rho_prev;
             // p_k = z_k + beta_k * p_k-1
-            axpy(N, beta, p, z, T);            // z - временный буфер
+            axpy(N, beta, p, z, T, out);            // z - временный буфер
             #pragma omp parallel for
             for (int i = 0; i < N; ++i) {
                 p[i] = z[i];
@@ -253,20 +267,20 @@ void Solve(
         }
 
         // q_k = Ap_k
-        spmv(N, IA, JA, A, p, q, T);
+        spmv(N, IA, JA, A, p, q, T, out);
 
         // alpha_k = rho_k/(p_k,q_k)
-        alpha = rho / dot(N, p, q, T);
+        alpha = rho / dot(N, p, q, T, out);
 
         // x_k = x_k-1 + alpha_k * p_k
-        axpy(N, alpha, p, x, T);
+        axpy(N, alpha, p, x, T, out);
 
         // r_k = r_k-1 - alpha_k * q_k
-        axpy(N, -alpha, q, r, T);
+        axpy(N, -alpha, q, r, T, out);
 
 #ifdef DBG_SOLVER
         // Норма невязки
-        double norm = sqrt(dot(N, r, r));
+        double norm = sqrt(dot(N, r, r, T, out));
         printf("%d %e\n", k, norm);
 #endif
 
@@ -275,19 +289,19 @@ void Solve(
     } while (rho > eps * eps && k < maxit);
 
     end_phase = omp_get_wtime();
-    fprintf(stderr, "Phase 7 (iterative solution) time: %f seconds\n", end_phase - start_phase);
+    fprintf(out, "Phase 7 (iterative solution) time: %f seconds\n", end_phase - start_phase);
 
     // Финальная невязка
-    spmv(N, IA, JA, A, x, q, T);  // q = Ax
+    spmv(N, IA, JA, A, x, q, T, out);  // q = Ax
     #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
         r[i] = q[i] - b[i];    // r = Ax - b
     }
-    *res = sqrt(dot(N, r, r, T));
+    *res = sqrt(dot(N, r, r, T, out));
     *n = k;
 
     end_total = omp_get_wtime();
-    fprintf(stderr, "Total Solve execution time: %f seconds\n\n", end_total - start_total);
+    fprintf(out, "Total Solve execution time: %f seconds\n\n", end_total - start_total);
 
     free(r);
     free(z);

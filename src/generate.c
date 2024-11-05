@@ -12,7 +12,8 @@ int Generate(
     int T,
     int** IA,
     int** JA,
-    int* N
+    int* N,
+    FILE* out
 ) {
     double start_total, end_total, start_phase, end_phase;
     start_total = omp_get_wtime();
@@ -24,7 +25,7 @@ int Generate(
     if (!neighbors_count) return -1;
 
 #ifdef DEBUG
-    fprintf(stderr, "Neighbor counter---------------------------------------------\n");
+    fprintf(out, "Neighbor counter---------------------------------------------\n");
 #endif
 
     // Замер времени первой фазы
@@ -40,7 +41,7 @@ int Generate(
 #ifdef DEBUG
             #pragma omp critical
             {
-                fprintf(stderr, "cur_node=%d\n", cur_node);
+                fprintf(out, "cur_node=%d\n", cur_node);
             }
 #endif
 
@@ -51,7 +52,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---up_node: %d\n", cur_node - (Nx + 1));
+                    fprintf(out, "---up_node: %d\n", cur_node - (Nx + 1));
                 }
 #endif
             }
@@ -64,7 +65,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---up_right_node: %d\n", (i - 1) * (Nx + 1) + (j + 1));
+                    fprintf(out, "---up_right_node: %d\n", (i - 1) * (Nx + 1) + (j + 1));
                 }
 #endif
             }
@@ -76,7 +77,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---left_node: %d\n", cur_node - 1);
+                    fprintf(out, "---left_node: %d\n", cur_node - 1);
                 }
 #endif
             }
@@ -92,7 +93,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---right_node: %d\n", cur_node + 1);
+                    fprintf(out, "---right_node: %d\n", cur_node + 1);
                 }
 #endif
             }
@@ -105,7 +106,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---down_left_node: %d\n", (i + 1) * (Nx + 1) + (j - 1));
+                    fprintf(out, "---down_left_node: %d\n", (i + 1) * (Nx + 1) + (j - 1));
                 }
 #endif
             }
@@ -117,7 +118,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---down_node: %d\n", cur_node + (Nx + 1));
+                    fprintf(out, "---down_node: %d\n", cur_node + (Nx + 1));
                 }
 #endif
             }
@@ -125,17 +126,17 @@ int Generate(
     }
 
     end_phase = omp_get_wtime();
-    fprintf(stderr, "\nPhase 1 (counting neighbors) time: %f seconds\n", end_phase - start_phase);
+    fprintf(out, "Phase 1 (counting neighbors) time: %f seconds\n", end_phase - start_phase);
 
 #ifdef DEBUG
-    fprintf(stderr, "-------------------------------------------------------------\n\n");
-    fprintf(stderr, "Number of neighbors------------------------------------------\n");
+    fprintf(out, "-------------------------------------------------------------\n\n");
+    fprintf(out, "Number of neighbors------------------------------------------\n");
     #pragma omp parallel for ordered
     for (int i = 0; i < *N; i++) {
         #pragma omp ordered
-        fprintf(stderr, "node %d: %d neighbors\n", i, neighbors_count[i]); 
+        fprintf(out, "node %d: %d neighbors\n", i, neighbors_count[i]); 
     }
-    fprintf(stderr, "-------------------------------------------------------------\n\n");
+    fprintf(out, "-------------------------------------------------------------\n\n");
 #endif
 
     // Замер времени второй фазы
@@ -153,7 +154,7 @@ int Generate(
     }
 
     end_phase = omp_get_wtime();
-    fprintf(stderr, "Phase 2 (generating IA) time: %f seconds\n", end_phase - start_phase);
+    fprintf(out, "Phase 2 (generating IA) time: %f seconds\n", end_phase - start_phase);
     
     *JA = (int*)malloc((*IA)[*N] * sizeof(int));
     if (!*JA) {
@@ -165,7 +166,7 @@ int Generate(
     memset(neighbors_count, 0, *N * sizeof(int));
 
 #ifdef DEBUG
-    fprintf(stderr, "JA-----------------------------------------------------------\n");
+    fprintf(out, "JA-----------------------------------------------------------\n");
 #endif
 
     // Замер времени третьей фазы
@@ -181,7 +182,7 @@ int Generate(
 #ifdef DEBUG
             #pragma omp critical
             {
-                fprintf(stderr, "cur_node=%d, pos=%d\n", cur_node, pos);
+                fprintf(out, "cur_node=%d, pos=%d\n", cur_node, pos);
             }
 #endif
 
@@ -191,7 +192,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---JA(up): %d\n", cur_node - (Nx + 1));
+                    fprintf(out, "---JA(up): %d\n", cur_node - (Nx + 1));
                 }
 #endif
             }
@@ -203,7 +204,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---JA(up_right): %d\n", (i - 1) * (Nx + 1) + (j + 1));
+                    fprintf(out, "---JA(up_right): %d\n", (i - 1) * (Nx + 1) + (j + 1));
                 }
 #endif
             }
@@ -214,7 +215,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---JA(left): %d\n", cur_node - 1);
+                    fprintf(out, "---JA(left): %d\n", cur_node - 1);
                 }
 #endif
             }
@@ -228,7 +229,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---JA(right): %d\n", cur_node + 1);
+                    fprintf(out, "---JA(right): %d\n", cur_node + 1);
                 }
 #endif
             }
@@ -240,7 +241,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---JA(down_left): %d\n", (i + 1) * (Nx + 1) + (j - 1));
+                    fprintf(out, "---JA(down_left): %d\n", (i + 1) * (Nx + 1) + (j - 1));
                 }
 #endif
             }
@@ -251,7 +252,7 @@ int Generate(
 #ifdef DEBUG
                 #pragma omp critical
                 {
-                    fprintf(stderr, "---JA(down): %d\n", cur_node + (Nx + 1));
+                    fprintf(out, "---JA(down): %d\n", cur_node + (Nx + 1));
                 }
 #endif
             }
@@ -259,27 +260,27 @@ int Generate(
 #ifdef DEBUG
             #pragma omp critical
             {
-                fprintf(stderr, "------JA: [ ");
+                fprintf(out, "------JA: [ ");
                 for (int k = pos; k < pos + local_count; k++) {
-                    fprintf(stderr, "%d ", (*JA)[k]);
+                    fprintf(out, "%d ", (*JA)[k]);
                 }
-                fprintf(stderr, "]\n");
+                fprintf(out, "]\n");
             }
 #endif
         }
     }
 
     end_phase = omp_get_wtime();
-    fprintf(stderr, "Phase 3 (generating JA) time: %f seconds\n", end_phase - start_phase);
+    fprintf(out, "Phase 3 (generating JA) time: %f seconds\n", end_phase - start_phase);
 
 #ifdef DEBUG
-    fprintf(stderr, "-------------------------------------------------------------\n\n");
+    fprintf(out, "-------------------------------------------------------------\n\n");
 #endif
 
     free(neighbors_count);
 
     end_total = omp_get_wtime();
-    fprintf(stderr, "Total Generate execution time: %f seconds\n\n", end_total - start_total);
+    fprintf(out, "Total Generate execution time: %f seconds\n\n", end_total - start_total);
     
     return 0;
 }

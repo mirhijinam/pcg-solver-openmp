@@ -1,6 +1,8 @@
 #ifndef CUSTOM_H
 #define CUSTOM_H
 
+#include <stdio.h>
+
 //#define DBG_GENERATE  // отладка этапа Generate
 //#define DBG_FILL      // отладка этапа Fill
 //#define DBG_SOLVER    // отладка этапа Solve и кернелов
@@ -14,7 +16,8 @@ int Generate(
     int T,
     int** IA,
     int** JA,
-    int* N
+    int* N,
+    FILE* out
 );
 
 int Fill(
@@ -23,7 +26,8 @@ int Fill(
     int* JA,
     double** A,
     double** b,
-    int T
+    int T,
+    FILE* out
 );
 
 void Solve(
@@ -37,14 +41,16 @@ void Solve(
     int maxit,
     int* n,
     double* res,
-    int T
+    int T,
+    FILE* out
 );
 
 void axpy_seq(
     int N,
     double alpha,
     double* x,
-    double* y
+    double* y,
+    FILE* out
 );
 
 void spmv_seq(
@@ -53,13 +59,15 @@ void spmv_seq(
     int* JA,
     double* A,
     double* x,
-    double* y
+    double* y,
+    FILE* out
 );
 
 double dot_seq(
     int N,
     double* x,
-    double* y
+    double* y,
+    FILE* out
 );
 
 void axpy(
@@ -67,14 +75,16 @@ void axpy(
     double alpha,
     double* x,
     double* y,
-    int T
+    int T,
+    FILE* out
 );
 
 double dot(
     int N,
     double* x,
     double* y,
-    int T
+    int T,
+    FILE* out
 );
 
 void spmv(
@@ -84,7 +94,8 @@ void spmv(
     double* A,
     double* x,
     double* y,
-    int T
+    int T,
+    FILE* out
 );
 
 #endif 

@@ -76,13 +76,23 @@ int main(int argc, char* argv[]) {
     int *IA = NULL, *JA = NULL;
     double *A = NULL, *b = NULL;
 
-    int result = Generate(Nx, Ny, K1, K2, T, &IA, &JA, &N);
+    // Поток для результатов и времени выполнения
+    FILE* out = output_file ? fopen(output_file, "w") : stdout;
+    if (output_file && !out) {
+        fprintf(stderr, "error: failed to open output file %s\n", output_file);
+        return 1;
+    }
+
+    // Поток только для отладочной информации (массивы, векторы и т.д.)
+    FILE* debug_out = debug_output ? out : stderr;
+
+    int result = Generate(Nx, Ny, K1, K2, T, &IA, &JA, &N, out);
     if (result != 0) {
         fprintf(stderr, "generate error: failed to generate matrix\n");
         return 1;
     }
 
-    result = Fill(N, IA, JA, &A, &b, T);
+    result = Fill(N, IA, JA, &A, &b, T, out);
     if (result != 0) {
         fprintf(stderr, "fill error: failed to fill matrix\n");
         free(IA);
@@ -105,25 +115,16 @@ int main(int argc, char* argv[]) {
     int iterations;      // фактическое число итераций
     double residual;     // невязка
 
-    Solve(A, b, x, N, IA, JA, eps, maxit, &iterations, &residual, T);
+    Solve(A, b, x, N, IA, JA, eps, maxit, &iterations, &residual, T, out);
 
-    printf("\nSolution completed:\n");
-    printf("Iterations: %d\n", iterations);
-    printf("Residual: %e\n", residual);
+    // Основной вывод всегда идет в указанный файл или stdout
+    fprintf(out, "\nSolution completed:\n");
+    fprintf(out, "Iterations: %d\n", iterations);
+    fprintf(out, "Residual: %e\n", residual);
 
+    // Дополнительная отладочная информация только при debug_output = 1
     if (debug_output) {
-        FILE* out = output_file ? fopen(output_file, "w") : stdout;
-        if (!out) {
-            fprintf(stderr, "debug error: failed to open output file %s\n", output_file);
-            free(IA);
-            free(JA);
-            free(A);
-            free(b);
-            free(x);
-            return 1;
-        }
-        
-        fprintf(out, "N = %d\n", N);
+        fprintf(out, "\nN = %d\n", N);
         fprintf(out, "IA: ");
         for (int i = 0; i <= N; ++i) {
             fprintf(out, "%d ", IA[i]);
@@ -137,10 +138,10 @@ int main(int argc, char* argv[]) {
             fprintf(out, "%e\n", x[i]);
         }
         fprintf(out, "\n");
+    }
 
-        if (output_file) {
-            fclose(out);
-        }
+    if (output_file) {
+        fclose(out);
     }
 
     // Освобождение памяти
