@@ -1,5 +1,6 @@
 GCC = gcc
 CLANG = clang
+CFLAGS += -fopenmp
 
 gcc:
 	$(GCC) -O3 -Wall -std=c99 -fopenmp -lm src/main.c src/generate.c src/fill.c src/solve.c -o main

@@ -94,45 +94,47 @@ void axpy_seq(
 #endif
 }
 
+typedef struct {
+    double total_time;
+    int calls;
+} TimeStats;
+
+TimeStats spmv_stats = {0};
+TimeStats dot_stats = {0};
+TimeStats axpy_stats = {0};
+
 void axpy(
-    int N,
-    double alpha,
-    double* x,
-    double* y,
-    int T,
+    int N, 
+    double alpha, 
+    double* x, 
+    double* y, 
+    int T, 
     FILE* out
 ) {
-    omp_set_num_threads(T);
-
-#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
-#endif
     
+    omp_set_num_threads(T);
     #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
         y[i] += alpha * x[i];
     }
     
-#ifdef DBG_SOLVER
-    double end_time = omp_get_wtime();
-    fprintf(out, "axpy time: %f seconds\n", end_time - start_time);
-#endif
+    double elapsed = omp_get_wtime() - start_time;
+    axpy_stats.total_time += elapsed;
+    axpy_stats.calls++;
 }
 
 double dot(
-    int N,
-    double* x,
-    double* y,
-    int T,
+    int N, 
+    double* x, 
+    double* y, 
+    int T, 
     FILE* out
 ) {
-    omp_set_num_threads(T);
-
-#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
-#endif
     
     double result = 0.0;
+    omp_set_num_threads(T);
     #pragma omp parallel
     {
         double local_sum = 0.0;
@@ -143,31 +145,27 @@ double dot(
         #pragma omp atomic
         result += local_sum;
     }
-
-#ifdef DBG_SOLVER
-    double end_time = omp_get_wtime();
-    fprintf(out, "dot time: %f seconds\n", end_time - start_time);
-#endif
+    
+    double elapsed = omp_get_wtime() - start_time;
+    dot_stats.total_time += elapsed;
+    dot_stats.calls++;
     
     return result;
 }
 
 void spmv(
-    int N,
-    int* IA,
-    int* JA,
-    double* A,
-    double* x,
-    double* y,
-    int T,
+    int N, 
+    int* IA, 
+    int* JA, 
+    double* A, 
+    double* x, 
+    double* y, 
+    int T, 
     FILE* out
 ) {
-    omp_set_num_threads(T);
-
-#ifdef DBG_SOLVER
     double start_time = omp_get_wtime();
-#endif
     
+    omp_set_num_threads(T);
     #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
         double sum = 0.0;
@@ -177,10 +175,9 @@ void spmv(
         y[i] = sum;
     }
     
-#ifdef DBG_SOLVER
-    double end_time = omp_get_wtime();
-    fprintf(out, "spmv time: %f seconds\n", end_time - start_time);
-#endif
+    double elapsed = omp_get_wtime() - start_time;
+    spmv_stats.total_time += elapsed;
+    spmv_stats.calls++;
 }
 
 void Solve(
@@ -302,6 +299,23 @@ void Solve(
 
     end_total = omp_get_wtime();
     fprintf(out, "Total Solve execution time: %f seconds\n\n", end_total - start_total);
+
+    fprintf(out, "\nExecution time statistics (T=%d):\n", T);
+    
+    fprintf(out, "\nSPMV:\n");
+    fprintf(out, "  Total calls: %d\n", spmv_stats.calls);
+    fprintf(out, "  Total time: %e seconds\n", spmv_stats.total_time);
+    fprintf(out, "  Average time: %e seconds\n", spmv_stats.total_time / spmv_stats.calls);
+    
+    fprintf(out, "\nDOT:\n");
+    fprintf(out, "  Total calls: %d\n", dot_stats.calls);
+    fprintf(out, "  Total time: %e seconds\n", dot_stats.total_time);
+    fprintf(out, "  Average time: %e seconds\n", dot_stats.total_time / dot_stats.calls);
+    
+    fprintf(out, "\nAXPY:\n");
+    fprintf(out, "  Total calls: %d\n", axpy_stats.calls);
+    fprintf(out, "  Total time: %e seconds\n", axpy_stats.total_time);
+    fprintf(out, "  Average time: %e seconds\n", axpy_stats.total_time / axpy_stats.calls);
 
     free(r);
     free(z);
