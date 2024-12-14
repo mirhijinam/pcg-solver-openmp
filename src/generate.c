@@ -124,7 +124,7 @@ int Generate(
     }
 
     end_phase = omp_get_wtime();
-    fprintf(out, "Phase 1 (counting neighbors) time: %f seconds\n", end_phase - start_phase);
+    // fprintf(out, "Phase 1 (counting neighbors) time: %f seconds\n", end_phase - start_phase);
 
 #ifdef DEBUG
     fprintf(out, "-------------------------------------------------------------\n\n");
@@ -152,7 +152,7 @@ int Generate(
     }
 
     end_phase = omp_get_wtime();
-    fprintf(out, "Phase 2 (generating IA) time: %f seconds\n", end_phase - start_phase);
+    // fprintf(out, "Phase 2 (generating IA) time: %f seconds\n", end_phase - start_phase);
     
     *JA = (int*)malloc((*IA)[*N] * sizeof(int));
     if (!*JA) {
@@ -269,7 +269,7 @@ int Generate(
     }
 
     end_phase = omp_get_wtime();
-    fprintf(out, "Phase 3 (generating JA) time: %f seconds\n", end_phase - start_phase);
+    // fprintf(out, "Phase 3 (generating JA) time: %f seconds\n", end_phase - start_phase);
 
 #ifdef DEBUG
     fprintf(out, "-------------------------------------------------------------\n\n");
@@ -278,7 +278,8 @@ int Generate(
     free(neighbors_count);
 
     end_total = omp_get_wtime();
-    fprintf(out, "Total Generate execution time: %f seconds\n\n", end_total - start_total);
-    
+    fprintf(out, "Generate:\n");
+    fprintf(out, "Total execution time: %f seconds\n\n", end_total - start_total);
+
     return 0;
 }

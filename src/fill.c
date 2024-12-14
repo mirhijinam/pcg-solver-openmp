@@ -57,7 +57,7 @@ int Fill(
     }
 
     end_phase = omp_get_wtime();
-    fprintf(out, "Phase 4 (filling matrix A) time: %f seconds\n", end_phase - start_phase);
+    // fprintf(out, "Phase 4 (filling matrix A) time: %f seconds\n", end_phase - start_phase);
 
     // Замер времени второй фазы - заполнение вектора b
     start_phase = omp_get_wtime();
@@ -68,7 +68,7 @@ int Fill(
     }
 
     end_phase = omp_get_wtime();
-    fprintf(out, "Phase 5 (filling vector b) time: %f seconds\n", end_phase - start_phase);
+    // fprintf(out, "Phase 5 (filling vector b) time: %f seconds\n", end_phase - start_phase);
 
 #ifdef DBG_FILL
     fprintf(out, "Fill results-------------------------------------------------\n");
@@ -89,7 +89,8 @@ int Fill(
 #endif
 
     end_total = omp_get_wtime();
-    fprintf(out, "Total Fill execution time: %f seconds\n\n", end_total - start_total);
+    fprintf(out, "Fill:\n");
+    fprintf(out, "Total execution time: %f seconds\n\n", end_total - start_total);
 
     return 0;
 }

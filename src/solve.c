@@ -222,7 +222,7 @@ void Solve(
         }
     }
     end_phase = omp_get_wtime();
-    fprintf(out, "Phase 6 (inverse preconditioner) time: %f seconds\n", end_phase - start_phase);
+    // fprintf(out, "Phase 6 (inverse preconditioner) time: %f seconds\n", end_phase - start_phase);
 
     start_phase = omp_get_wtime();
     // x_0 = 0 и r_0 = b
@@ -286,7 +286,7 @@ void Solve(
     } while (rho > eps * eps && k < maxit);
 
     end_phase = omp_get_wtime();
-    fprintf(out, "Phase 7 (iterative solution) time: %f seconds\n", end_phase - start_phase);
+    // fprintf(out, "Phase 7 (iterative solution) time: %f seconds\n", end_phase - start_phase);
 
     // Финальная невязка
     spmv(N, IA, JA, A, x, q, T, out);  // q = Ax
@@ -298,9 +298,10 @@ void Solve(
     *n = k;
 
     end_total = omp_get_wtime();
-    fprintf(out, "Total Solve execution time: %f seconds\n\n", end_total - start_total);
+    fprintf(out, "Solve:\n");
+    fprintf(out, "Total execution time: %f seconds\n\n", end_total - start_total);
 
-    fprintf(out, "\nExecution time statistics (T=%d):\n", T);
+    // fprintf(out, "\nExecution time statistics (T=%d):\n", T);
     
     fprintf(out, "\nSPMV:\n");
     fprintf(out, "  Total calls: %d\n", spmv_stats.calls);
