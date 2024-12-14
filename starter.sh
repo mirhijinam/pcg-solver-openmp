@@ -13,14 +13,16 @@ submit_job() {
         local CORE_AFFINITY="affinity[core($THREADS)]"
     fi
 
+    echo "Submitting job: THREADS=$THREADS, INPUT_SIZE=$INPUT_SIZE, TIME_LIMIT=$TIME_LIMIT"
     bsub -n "$THREADS" -W "$TIME_LIMIT" -o "$OUTPUT_FILE" -R "$CORE_AFFINITY" \
         OMP_NUM_THREADS="$THREADS" /polusfs/1sf/openmp/launchOpenMP.py "$INPUT_FILE"
 }
 
-TIME_LIMIT_SMALL="0:01"
-TIME_LIMIT_MEDIUM="0:05"
-TIME_LIMIT_LARGE="0:10"
-TIME_LIMIT_XLARGE="0:15"
+# Time limits in HH:MM format
+TIME_LIMIT_SMALL="00:01"
+TIME_LIMIT_MEDIUM="00:05"
+TIME_LIMIT_LARGE="00:10"
+TIME_LIMIT_XLARGE="00:15"
 
 for INPUT_SIZE in 99 316 999 3162; do
     case $INPUT_SIZE in
