@@ -26,16 +26,16 @@ TIME_LIMIT_XLARGE="00:15"
 
 for INPUT_SIZE in 99 316 999 3162; do
     case $INPUT_SIZE in
-        100)
+        99)
             TIME_LIMIT=$TIME_LIMIT_SMALL
             ;;
-        500)
+        316)
             TIME_LIMIT=$TIME_LIMIT_MEDIUM
             ;;
-        1000)
+        999)
             TIME_LIMIT=$TIME_LIMIT_LARGE
             ;;
-        3000)
+        3163)
             TIME_LIMIT=$TIME_LIMIT_XLARGE
             ;;
     esac
