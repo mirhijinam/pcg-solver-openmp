@@ -2,5 +2,6 @@ main
 *.o
 *~
 .DS_Store
+input
 output*
 .vscode
