@@ -1,10 +1,10 @@
 def generate_task(T, AffinityT, Nx, Ny):
-    task = f"""#BSUB -J "t{T}_{Nx}"
+    task = f"""#BSUB -J "polusIsDoingVRRRR{T}_{Nx}"
 #BSUB -W 0:20
-#BSUB -o t{T}_{Nx}
+#BSUB -o results/res{T}_{Nx}
 #BSUB -e a.out.%J.err
 #BSUB -R "affinity[core({AffinityT})]"
-OMP_NUM_THREADS={T} /polusfs/lsf/openmp/launchOpenMP.py ./main {Nx} {Ny} 10 15 {T} 0.00001 no_debug
+OMP_NUM_THREADS={AffinityT} /polusfs/lsf/openmp/launchOpenMP.py ./main {Nx} {Ny} 7 10 {T} 0.00001 no_debug
 """
     return task
 
