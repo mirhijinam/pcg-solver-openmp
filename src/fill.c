@@ -13,8 +13,18 @@ int Fill(
     int T,
     FILE* out
 ) {
-    double start_total, end_total, start_phase, end_phase;
-    start_total = omp_get_wtime();
+    double start_total = omp_get_wtime();
+
+    omp_set_num_threads(T);
+
+    *A = (double*)malloc(IA[N] * sizeof(double));
+    if (!*A) return -1;
+
+    *b = (double*)malloc(N * sizeof(double));
+    if (!*b) {
+        free(*A);
+        return -1;
+    }
 
     #pragma omp parallel
     {
@@ -59,7 +69,7 @@ int Fill(
         fprintf(out, "Vector b filling time: %e seconds\n", end_phase - start_phase);
     }
 
-    end_total = omp_get_wtime();
+    double end_total = omp_get_wtime();
     fprintf(out, "Fill: %e seconds\n", end_total - start_total);
 
     return 0;

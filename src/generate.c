@@ -15,12 +15,11 @@ int Generate(
     int* N,
     FILE* out
 ) {
-    double start_total, end_total;
-    start_total = omp_get_wtime();
-
+    double start_total = omp_get_wtime();
+    
     omp_set_num_threads(T);
-
     *N = (Nx + 1) * (Ny + 1);
+
     int* neighbors_count = (int*)calloc(*N, sizeof(int));
     if (!neighbors_count) return -1;
 
@@ -34,17 +33,22 @@ int Generate(
             if (j > 0) neighbors_count[cur_node]++; // Левый
             if (j < Nx) neighbors_count[cur_node]++; // Правый
             if (i < Ny) neighbors_count[cur_node]++; // Нижний
+            neighbors_count[cur_node]++; // Добавляем единицу для самого узла
 
             // Верхний правый по диагонали
-            int up_cell_idx = (i - 1) * Nx + j;
-            if (i > 0 && j < Nx && up_cell_idx >= 0 && up_cell_idx < Nx * Ny && (up_cell_idx % (K1 + K2)) >= K1) {
-                neighbors_count[cur_node]++;
+            if (i > 0 && j < Nx) {
+                int up_cell_idx = (i - 1) * Nx + j;
+                if (up_cell_idx >= 0 && up_cell_idx < Nx * Ny && (up_cell_idx % (K1 + K2)) >= K1) {
+                    neighbors_count[cur_node]++;
+                }
             }
 
             // Нижний левый по диагонали
-            int prev_cell_idx = i * Nx + (j - 1);
-            if (i < Ny && j > 0 && prev_cell_idx >= 0 && prev_cell_idx < Nx * Ny && (prev_cell_idx % (K1 + K2)) >= K1) {
-                neighbors_count[cur_node]++;
+            if (i < Ny && j > 0) {
+                int prev_cell_idx = i * Nx + (j - 1);
+                if (prev_cell_idx >= 0 && prev_cell_idx < Nx * Ny && (prev_cell_idx % (K1 + K2)) >= K1) {
+                    neighbors_count[cur_node]++;
+                }
             }
         }
     }
@@ -80,27 +84,31 @@ int Generate(
 
             if (i > 0) (*JA)[pos + local_count++] = cur_node - (Nx + 1); // Верхний
             if (j > 0) (*JA)[pos + local_count++] = cur_node - 1;       // Левый
-            (*JA)[pos + local_count++] = cur_node;                     // Сам
+            (*JA)[pos + local_count++] = cur_node;                     // Сам узел
             if (j < Nx) (*JA)[pos + local_count++] = cur_node + 1;     // Правый
             if (i < Ny) (*JA)[pos + local_count++] = cur_node + (Nx + 1); // Нижний
 
             // Верхний правый по диагонали
-            int up_cell_idx = (i - 1) * Nx + j;
-            if (i > 0 && j < Nx && up_cell_idx >= 0 && up_cell_idx < Nx * Ny && (up_cell_idx % (K1 + K2)) >= K1) {
-                (*JA)[pos + local_count++] = (i - 1) * (Nx + 1) + (j + 1);
+            if (i > 0 && j < Nx) {
+                int up_cell_idx = (i - 1) * Nx + j;
+                if (up_cell_idx >= 0 && up_cell_idx < Nx * Ny && (up_cell_idx % (K1 + K2)) >= K1) {
+                    (*JA)[pos + local_count++] = (i - 1) * (Nx + 1) + (j + 1);
+                }
             }
 
             // Нижний левый по диагонали
-            int prev_cell_idx = i * Nx + (j - 1);
-            if (i < Ny && j > 0 && prev_cell_idx >= 0 && prev_cell_idx < Nx * Ny && (prev_cell_idx % (K1 + K2)) >= K1) {
-                (*JA)[pos + local_count++] = (i + 1) * (Nx + 1) + (j - 1);
+            if (i < Ny && j > 0) {
+                int prev_cell_idx = i * Nx + (j - 1);
+                if (prev_cell_idx >= 0 && prev_cell_idx < Nx * Ny && (prev_cell_idx % (K1 + K2)) >= K1) {
+                    (*JA)[pos + local_count++] = (i + 1) * (Nx + 1) + (j - 1);
+                }
             }
         }
     }
 
     free(neighbors_count);
 
-    end_total = omp_get_wtime();
+    double end_total = omp_get_wtime();
     fprintf(out, "Generate: %e seconds\n", end_total - start_total);
 
     return 0;

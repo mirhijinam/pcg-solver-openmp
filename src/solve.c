@@ -111,9 +111,9 @@ void Solve(
     int T,
     FILE* out
 ) {
-    omp_set_num_threads(T);
-
     double start_total = omp_get_wtime();
+    
+    omp_set_num_threads(T);
 
     double* r = (double*)malloc(N * sizeof(double));
     double* z = (double*)malloc(N * sizeof(double));
@@ -122,7 +122,11 @@ void Solve(
     double* M = (double*)malloc(N * sizeof(double));
 
     if (!r || !z || !p || !q || !M) {
-        fprintf(out, "failed to allocate memory in Solve\n");
+        if (r) free(r);
+        if (z) free(z);
+        if (p) free(p);
+        if (q) free(q);
+        if (M) free(M);
         return;
     }
 
