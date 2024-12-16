@@ -1,10 +1,10 @@
 .DS_Store
 .vscode
 
-env
-inp
-res
-err
+env*
+inp*
+res*
+err*
 
 main
 
@@ -17,4 +17,5 @@ output.txt
 report.pages
 report.pdf
 
-plot_metrics.py
+plot*
+
