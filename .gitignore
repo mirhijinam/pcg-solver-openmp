@@ -8,8 +8,11 @@ err
 
 main
 
+output.txt
+
 *.o
 *~
+
 
 report.pages
 report.pdf
