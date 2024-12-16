@@ -16,3 +16,5 @@ output.txt
 
 report.pages
 report.pdf
+
+plot_metrics.py
