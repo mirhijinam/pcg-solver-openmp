@@ -1,0 +1,28 @@
+Generate:
+Total execution time: 0.000605 seconds
+
+Fill:
+Total execution time: 0.000720 seconds
+
+Solve:
+Total execution time: 0.010348 seconds
+
+
+SPMV:
+  Total calls: 21
+  Total time: 2.988338e-03 seconds
+  Average time: 1.423018e-04 seconds
+
+DOT:
+  Total calls: 41
+  Total time: 3.017902e-03 seconds
+  Average time: 7.360737e-05 seconds
+
+AXPY:
+  Total calls: 59
+  Total time: 2.459288e-03 seconds
+  Average time: 4.168284e-05 seconds
+
+Solution completed:
+Iterations: 20
+Residual: 6.317836e-06
