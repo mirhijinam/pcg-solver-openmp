@@ -28,8 +28,6 @@ int Fill(
 
     #pragma omp parallel
     {
-        double start_phase = omp_get_wtime();
-
         #pragma omp for schedule(static)
         for (int i = 0; i < N; ++i) {
             double sum = 0.0;
@@ -49,24 +47,14 @@ int Fill(
                 (*A)[diag_pos] = 1.234 * sum;
             }
         }
-
-        double end_phase = omp_get_wtime();
-        #pragma omp single
-        // fprintf(out, "Matrix A filling time: %e seconds\n", end_phase - start_phase);
     }
 
     #pragma omp parallel
     {
-        double start_phase = omp_get_wtime();
-
         #pragma omp for schedule(static)
         for (int i = 0; i < N; ++i) {
             (*b)[i] = sin(i);
         }
-
-        double end_phase = omp_get_wtime();
-        #pragma omp single
-        // fprintf(out, "Vector b filling time: %e seconds\n", end_phase - start_phase);
     }
 
     double end_total = omp_get_wtime();
