@@ -197,11 +197,11 @@ void Solve(
     fprintf(out, "  Total calls: %d\n", spmv_stats.calls);
     fprintf(out, "  Average time: %e seconds\n", spmv_stats.total_time / spmv_stats.calls);
 
-    fprintf(out, "\nDOT: %e\n", dot_stats.total_time);
+    fprintf(out, "DOT: %e seconds\n", dot_stats.total_time);
     fprintf(out, "  Total calls: %d\n", dot_stats.calls);
     fprintf(out, "  Average time: %e seconds\n", dot_stats.total_time / dot_stats.calls);
 
-    fprintf(out, "\nAXPY: %e\n", axpy_stats.total_time);
+    fprintf(out, "AXPY: %e seconds\n", axpy_stats.total_time);
     fprintf(out, "  Total calls: %d\n", axpy_stats.calls);
     fprintf(out, "  Average time: %e seconds\n", axpy_stats.total_time / axpy_stats.calls);
 

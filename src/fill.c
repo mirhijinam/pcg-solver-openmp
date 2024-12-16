@@ -52,7 +52,7 @@ int Fill(
 
         double end_phase = omp_get_wtime();
         #pragma omp single
-        fprintf(out, "Matrix A filling time: %e seconds\n", end_phase - start_phase);
+        // fprintf(out, "Matrix A filling time: %e seconds\n", end_phase - start_phase);
     }
 
     #pragma omp parallel
@@ -66,7 +66,7 @@ int Fill(
 
         double end_phase = omp_get_wtime();
         #pragma omp single
-        fprintf(out, "Vector b filling time: %e seconds\n", end_phase - start_phase);
+        // fprintf(out, "Vector b filling time: %e seconds\n", end_phase - start_phase);
     }
 
     double end_total = omp_get_wtime();
