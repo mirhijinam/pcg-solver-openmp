@@ -2,42 +2,124 @@
 #include <stdlib.h>
 #include <math.h>
 #include <omp.h>
+#include "custom.h"
 
-typedef struct {
-    double total_time;
-    int calls;
-} TimeStats;
-
-static TimeStats spmv_stats = {0};
-static TimeStats dot_stats = {0};
-static TimeStats axpy_stats = {0};
-
-static inline void copy_vec(int N, const double *restrict x, double *restrict y) {
-    #pragma omp parallel for schedule(static)
+void copy_vec(
+    int N,
+    double* x,
+    double* y
+) {
     for (int i = 0; i < N; ++i) {
         y[i] = x[i];
     }
 }
 
-static inline void fill_constant(int N, double alpha, double *restrict x) {
-    #pragma omp parallel for schedule(static)
+void fill_constant(
+    int N,
+    double alpha,
+    double* x
+) {
     for (int i = 0; i < N; ++i) {
         x[i] = alpha;
     }
 }
 
-static void spmv(
-    int N, 
-    const int *restrict IA, 
-    const int *restrict JA, 
-    const double *restrict A, 
-    const double *restrict x, 
-    double *restrict y, 
+void spmv_seq(
+    int N,
+    int* IA,
+    int* JA,
+    double* A,
+    double* x,
+    double* y,
     FILE* out
 ) {
-    double start_time = omp_get_wtime();
+    for (int i = 0; i < N; ++i) {
+        y[i] = 0.0;
+        for (int k = IA[i]; k < IA[i + 1]; ++k) {
+            y[i] += A[k] * x[JA[k]];
+        }
+    }
+}
 
-    #pragma omp parallel for schedule(static)
+double dot_seq(
+    int N,
+    double* x,
+    double* y,
+    FILE* out
+) {
+    double result = 0.0;
+    for (int i = 0; i < N; ++i) {
+        result += x[i] * y[i];
+    }
+
+    return result;
+}
+
+void axpy_seq(
+    int N,
+    double alpha,
+    double* x,
+    double* y,
+    FILE* out
+) {
+    for (int i = 0; i < N; ++i) {
+        y[i] += alpha * x[i];
+    }
+}
+
+void axpy(
+    int N,
+    double alpha,
+    double* x,
+    double* y,
+    int T,
+    FILE* out
+) {
+    omp_set_num_threads(T);
+
+    #pragma omp parallel for
+    for (int i = 0; i < N; ++i) {
+        y[i] += alpha * x[i];
+    }
+}
+
+double dot(
+    int N,
+    double* x,
+    double* y,
+    int T,
+    FILE* out
+) {
+    omp_set_num_threads(T);
+
+    double result = 0.0;
+    #pragma omp parallel
+    {
+        double local_sum = 0.0;
+        #pragma omp for
+        for (int i = 0; i < N; ++i) {
+            local_sum += x[i] * y[i];
+        }
+        #pragma omp atomic
+        result += local_sum;
+    }
+
+    return result;
+}
+
+void spmv(
+    int N,
+    int* IA,
+    int* JA,
+    double* A,
+    double* x,
+    double* y,
+    int T,
+    FILE* out
+) {
+    omp_set_num_threads(T);
+    
+    #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
         double sum = 0.0;
         for (int k = IA[i]; k < IA[i + 1]; ++k) {
@@ -45,174 +127,114 @@ static void spmv(
         }
         y[i] = sum;
     }
-
-    double elapsed = omp_get_wtime() - start_time;
-    #pragma omp atomic
-    spmv_stats.total_time += elapsed;
-    #pragma omp atomic
-    spmv_stats.calls++;
-}
-
-static double dot(
-    int N, 
-    const double *restrict x, 
-    const double *restrict y, 
-    FILE* out
-) {
-    double start_time = omp_get_wtime();
-
-    double result = 0.0;
-
-    #pragma omp parallel for schedule(static) reduction(+:result)
-    for (int i = 0; i < N; ++i) {
-        result += x[i] * y[i];
-    }
-
-    double elapsed = omp_get_wtime() - start_time;
-    #pragma omp atomic
-    dot_stats.total_time += elapsed;
-    #pragma omp atomic
-    dot_stats.calls++;
-
-    return result;
-}
-
-static void axpy(
-    int N, 
-    double alpha, 
-    const double *restrict x, 
-    double *restrict y, 
-    FILE* out
-) {
-    double start_time = omp_get_wtime();
-
-    #pragma omp parallel for schedule(static)
-    for (int i = 0; i < N; ++i) {
-        y[i] += alpha * x[i];
-    }
-
-    double elapsed = omp_get_wtime() - start_time;
-    #pragma omp atomic
-    axpy_stats.total_time += elapsed;
-    #pragma omp atomic
-    axpy_stats.calls++;
 }
 
 void Solve(
-    double *restrict A,
-    double *restrict b,
-    double *restrict x,
+    double* A,
+    double* b,
+    double* x,
     int N,
-    int *restrict IA,
-    int *restrict JA,
+    int* IA,
+    int* JA,
     double eps,
     int maxit,
-    int *n,
-    double *res,
+    int* n,
+    double* res,
     int T,
-    FILE *out
+    FILE* out
 ) {
-    // Предполагается, что omp_set_num_threads(T) вызван до вызова Solve или в main
+    omp_set_num_threads(T);
 
-    double start_total = omp_get_wtime();
+    double start_total, end_total, start_phase, end_phase;
+    start_total = omp_get_wtime();
 
-    double *restrict r = (double*)malloc(N * sizeof(double));
-    double *restrict z = (double*)malloc(N * sizeof(double));
-    double *restrict p = (double*)malloc(N * sizeof(double));
-    double *restrict q = (double*)malloc(N * sizeof(double));
-    double *restrict M = (double*)malloc(N * sizeof(double));
+    double* r = (double*)malloc(N * sizeof(double));
+    double* z = (double*)malloc(N * sizeof(double));
+    double* p = (double*)malloc(N * sizeof(double));
+    double* q = (double*)malloc(N * sizeof(double));
+    double* M = (double*)malloc(N * sizeof(double));
 
     if (!r || !z || !p || !q || !M) {
-        free(r);
-        free(z);
-        free(p);
-        free(q);
-        free(M);
+        fprintf(out, "failed to allocate memory in Solve\n");
         return;
     }
 
-    // Одним параллельным регионом вычисляем M, x, r
-    #pragma omp parallel for schedule(static)
+    // Обратная матрица для диагонального предобуславливателя
+    #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
-        // Поиск диагонального элемента
-        double diag = 0.0;
         for (int k = IA[i]; k < IA[i + 1]; ++k) {
-            if (JA[k] == i) {
-                diag = A[k];
+            if (JA[k] == i) {       // диагональный элемент
+                M[i] = 1.0 / A[k];  // сразу сохраняем обратное значение
                 break;
             }
         }
-        M[i] = 1.0 / diag;
+    }
+
+    // x_0 = 0 и r_0 = b
+    #pragma omp parallel for
+    for (int i = 0; i < N; ++i) {
         x[i] = 0.0;
         r[i] = b[i];
     }
 
-    double rho = 0.0, rho_prev = 0.0, alpha = 0.0, beta = 0.0;
-    int iter = 0;
+    double rho = 0.0, rho_prev = 0.0, alpha = 0.0, beta = 0.0;  // инициализируем все переменные
+    int k = 0;
 
-    while (1) {
-        iter++;
-
-        // z = M * r
-        #pragma omp parallel for schedule(static)
+    do {
+        ++k;
+        
+        // z_k = M^(-1) * r_k-1
+        #pragma omp parallel for
         for (int i = 0; i < N; ++i) {
-            z[i] = M[i] * r[i];
+            z[i] = M[i] * r[i];         // M - обратная матрица
         }
 
-        rho = dot(N, r, z, out);
+        // rho_k = (r_k-1,z_k)
+        rho = dot(N, r, z, T, out);
 
-        if (iter == 1) {
-            // p = z
-            #pragma omp parallel for schedule(static)
+        if (k == 1) {
+            // p_k = z_k
+            #pragma omp parallel for
             for (int i = 0; i < N; ++i) {
                 p[i] = z[i];
             }
         } else {
             beta = rho / rho_prev;
-            // p = z + beta * p
-            #pragma omp parallel for schedule(static)
+            // p_k = z_k + beta_k * p_k-1
+            axpy(N, beta, p, z, T, out);            // z - временный буфер
+            #pragma omp parallel for
             for (int i = 0; i < N; ++i) {
-                p[i] = z[i] + beta * p[i];
+                p[i] = z[i];
             }
         }
 
-        spmv(N, IA, JA, A, p, q, out);
-        double pq = dot(N, p, q, out);
-        alpha = rho / pq;
+        // q_k = Ap_k
+        spmv(N, IA, JA, A, p, q, T, out);
 
-        axpy(N, alpha, p, x, out);
-        axpy(N, -alpha, q, r, out);
+        // alpha_k = rho_k/(p_k,q_k)
+        alpha = rho / dot(N, p, q, T, out);
 
-        // Проверка на сходимость
-        if (rho < eps * eps || iter >= maxit)
-            break;
+        // x_k = x_k-1 + alpha_k * p_k
+        axpy(N, alpha, p, x, T, out);
+
+        // r_k = r_k-1 - alpha_k * q_k
+        axpy(N, -alpha, q, r, T, out);
 
         rho_prev = rho;
-    }
 
-    // Вычисляем невязку
-    spmv(N, IA, JA, A, x, q, out);
-    #pragma omp parallel for schedule(static)
+    } while (rho > eps * eps && k < maxit);
+
+    // Финальная невязка
+    spmv(N, IA, JA, A, x, q, T, out);  // q = Ax
+    #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
-        r[i] = q[i] - b[i];
+        r[i] = q[i] - b[i];    // r = Ax - b
     }
-    *res = sqrt(dot(N, r, r, out));
-    *n = iter;
+    *res = sqrt(dot(N, r, r, T, out));
+    *n = k;
 
-    double end_total = omp_get_wtime();
-    fprintf(out, "Solve: %e seconds\n", end_total - start_total);
-
-    fprintf(out, "\nSPMV: %e seconds\n", spmv_stats.total_time);
-    fprintf(out, "  Total calls: %d\n", spmv_stats.calls);
-    fprintf(out, "  Average time: %e seconds\n", spmv_stats.total_time / (spmv_stats.calls ? spmv_stats.calls : 1));
-
-    fprintf(out, "DOT: %e seconds\n", dot_stats.total_time);
-    fprintf(out, "  Total calls: %d\n", dot_stats.calls);
-    fprintf(out, "  Average time: %e seconds\n", dot_stats.total_time / (dot_stats.calls ? dot_stats.calls : 1));
-
-    fprintf(out, "AXPY: %e seconds\n", axpy_stats.total_time);
-    fprintf(out, "  Total calls: %d\n", axpy_stats.calls);
-    fprintf(out, "  Average time: %e seconds\n", axpy_stats.total_time / (axpy_stats.calls ? axpy_stats.calls : 1));
+    end_total = omp_get_wtime();
+    fprintf(out, "Solve:%f\n", end_total - start_total);
 
     free(r);
     free(z);

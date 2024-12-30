@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
         K1 = atoi(argv[3]);
         K2 = atoi(argv[4]);
         T = atoi(argv[5]);
-        
+
         for (int i = 6; i < argc; ++i) {
             if (strcmp(argv[i], "-d") == 0) {
                 debug_output = 1;
@@ -76,8 +76,9 @@ int main(int argc, char* argv[]) {
     int *IA = NULL, *JA = NULL;
     double *A = NULL, *b = NULL;
 
-    // Поток для результатов и времени выполнения
     FILE* out = output_file ? fopen(output_file, "w") : stdout;
+    fprintf(out, "Nx_T:%d_%d\n\n", Nx, T);
+        
     if (output_file && !out) {
         fprintf(stderr, "error: failed to open output file %s\n", output_file);
         return 1;
@@ -115,9 +116,9 @@ int main(int argc, char* argv[]) {
     Solve(A, b, x, N, IA, JA, eps, maxit, &iterations, &residual, T, out);
 
     // Основной вывод всегда идет в указанный файл или stdout
-    fprintf(out, "\nSolution completed:\n");
-    fprintf(out, "Iterations: %d\n", iterations);
-    fprintf(out, "Residual: %e\n", residual);
+    fprintf(out, "\nSolution completed.\n");
+    fprintf(out, "\tIterations:%d\n", iterations);
+    fprintf(out, "\tResidual:%e\n", residual);
 
     // Дополнительная отладочная информация только при debug_output = 1
     if (debug_output) {

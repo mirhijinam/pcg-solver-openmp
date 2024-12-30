@@ -8,14 +8,13 @@ err*
 
 main
 
-output.txt
+*output*
 
 *.o
 *~
 
-
-report.pages
-report.pdf
+report*
 
 plot*
 
+pyscripts/
