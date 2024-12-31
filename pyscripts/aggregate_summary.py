@@ -96,7 +96,6 @@ def process_results(result_base_folder, summary_output_folder):
 
     write_nnz_file(summary_output_folder, nnz_data)
 
-# Укажите базовую папку с результатами и папку для сохранения summary
-result_base_folder = "results"
+result_base_folder = "res"
 summary_output_folder = "summary"
 process_results(result_base_folder, summary_output_folder)
