@@ -1,6 +1,7 @@
 import os
 import re
 import csv
+import matplotlib.pyplot as plt
 
 def parse_output_file(filepath):
     data = {
@@ -93,11 +94,60 @@ def process_results(result_base_folder, summary_output_folder):
             averages = calculate_averages(aggregated_data)
             write_summary_file(summary_output_folder, Nx, T, averages)
 
-            if aggregated_data["NNZ"]:
-                nnz_data[(Nx, T)] = int(averages["NNZ"])
+            nnz_data[(Nx, T)] = int(averages['NNZ'])
 
     write_nnz_file(summary_output_folder, nnz_data)
 
+def plot_sequential(data_folder):
+    csv_file = os.path.join(data_folder, "nnz_summary.csv")
+    data = {}
+
+    with open(csv_file, "r") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            Nx = int(row["Nx"])
+            nnz = int(row["NNZ"])
+            if Nx not in data:
+                data[Nx] = nnz
+
+    sorted_data = dict(sorted(data.items()))
+    plt.figure()
+    plt.plot(sorted_data.keys(), sorted_data.values(), marker="o")
+    plt.xlabel("Nx")
+    plt.ylabel("NNZ")
+    plt.title("NNZ vs Nx (Sequential)")
+    plt.grid(True)
+    plt.savefig(os.path.join(data_folder, "nnz_vs_nx_sequential.png"))
+    plt.close()
+
+def plot_parallel(data_folder):
+    csv_file = os.path.join(data_folder, "nnz_summary.csv")
+    data = {}
+
+    with open(csv_file, "r") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            Nx = int(row["Nx"])
+            T = int(row["T"])
+            nnz = int(row["NNZ"])
+            if Nx not in data:
+                data[Nx] = {}
+            data[Nx][T] = nnz
+
+    for Nx, t_data in data.items():
+        sorted_t_data = dict(sorted(t_data.items()))
+        plt.figure()
+        plt.plot(sorted_t_data.keys(), sorted_t_data.values(), marker="o")
+        plt.xlabel("T")
+        plt.ylabel("NNZ")
+        plt.title(f"NNZ vs T for Nx={Nx} (Parallel)")
+        plt.grid(True)
+        plt.savefig(os.path.join(data_folder, f"nnz_vs_t_parallel_Nx_{Nx}.png"))
+        plt.close()
+
 result_base_folder = "res"
 summary_output_folder = "summary"
+
 process_results(result_base_folder, summary_output_folder)
+plot_sequential(summary_output_folder)
+plot_parallel(summary_output_folder)
