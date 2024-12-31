@@ -32,7 +32,7 @@ for T in [1, 2, 4, 8, 16, 32]:
         os.makedirs(res_folder, exist_ok=True)
         os.makedirs(err_folder, exist_ok=True)
 
-        for num in range(1, 101):
+        for num in range(1, 11):
             task = generate_task(T, AffinityT, Nx, Ny, num)
             filename = f'{folder_path}/{num}.lsf'
             with open(filename, 'w') as f:
