@@ -1,5 +1,6 @@
 import os
 import re
+import csv
 
 def parse_output_file(filepath):
     data = {
@@ -9,7 +10,8 @@ def parse_output_file(filepath):
         "AXPY": [],
         "DOT": [],
         "Iterations": [],
-        "Residual": []
+        "Residual": [],
+        "NNZ": []
     }
     with open(filepath, 'r') as file:
         for line in file:
@@ -27,6 +29,8 @@ def parse_output_file(filepath):
                 data["Iterations"].append(int(line.split(":")[1]))
             elif "Residual:" in line:
                 data["Residual"].append(float(line.split(":")[1]))
+            elif "NNZ:" in line:
+                data["NNZ"].append(int(line.split(":")[1]))
     return data
 
 def calculate_averages(data):
@@ -40,6 +44,7 @@ def write_summary_file(output_folder, Nx, T, averages):
     with open(output_filepath, 'w') as file:
         file.write(f"Nx_T:{Nx}_{T}\n\n")
         file.write(f"Generate:{averages['Generate']:.6f}\n")
+        file.write(f"\tNNZ:{int(averages['NNZ']):d}\n")
         file.write(f"Fill:{averages['Fill']:.6f}\n")
         file.write(f"Solve:{sum([averages['SPMV'], averages['AXPY'], averages['DOT']]):.6f}\n")
         file.write(f"\tSPMV:{averages['SPMV']:.6f}\n")
@@ -49,8 +54,18 @@ def write_summary_file(output_folder, Nx, T, averages):
         file.write(f"\tIterations:{averages['Iterations']:.0f}\n")
         file.write(f"\tResidual:{averages['Residual']:.6e}\n")
 
+def write_nnz_file(output_folder, nnz_data):
+    output_filepath = os.path.join(output_folder, "nnz_summary.csv")
+    with open(output_filepath, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Nx", "T", "NNZ"])
+        for (Nx, T), nnz in sorted(nnz_data.items()):
+            writer.writerow([Nx, T, nnz])
+
 def process_results(result_base_folder, summary_output_folder):
     os.makedirs(summary_output_folder, exist_ok=True)
+
+    nnz_data = {}
 
     for root, dirs, files in os.walk(result_base_folder):
         for dir_name in dirs:
@@ -64,7 +79,8 @@ def process_results(result_base_folder, summary_output_folder):
                 "AXPY": [],
                 "DOT": [],
                 "Iterations": [],
-                "Residual": []
+                "Residual": [],
+                "NNZ": []
             }
 
             for file_name in os.listdir(dir_path):
@@ -77,6 +93,11 @@ def process_results(result_base_folder, summary_output_folder):
             averages = calculate_averages(aggregated_data)
             write_summary_file(summary_output_folder, Nx, T, averages)
 
-result_base_folder = "results"
+            if aggregated_data["NNZ"]:
+                nnz_data[(Nx, T)] = int(averages["NNZ"])
+
+    write_nnz_file(summary_output_folder, nnz_data)
+
+result_base_folder = "res"
 summary_output_folder = "summary"
 process_results(result_base_folder, summary_output_folder)
