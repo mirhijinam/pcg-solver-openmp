@@ -146,6 +146,7 @@ void Solve(
     omp_set_num_threads(T);
 
     double start_total, end_total, start_phase, end_phase;
+    double time_spmv = 0.0, time_axpy = 0.0, time_dot = 0.0;
     start_total = omp_get_wtime();
 
     double* r = (double*)malloc(N * sizeof(double));
@@ -177,7 +178,7 @@ void Solve(
         r[i] = b[i];
     }
 
-    double rho = 0.0, rho_prev = 0.0, alpha = 0.0, beta = 0.0;  // инициализируем все переменные
+    double rho = 0.0, rho_prev = 0.0, alpha = 0.0, beta = 0.0; // инициализируем все переменные
     int k = 0;
 
     do {
@@ -186,11 +187,14 @@ void Solve(
         // z_k = M^(-1) * r_k-1
         #pragma omp parallel for
         for (int i = 0; i < N; ++i) {
-            z[i] = M[i] * r[i];         // M - обратная матрица
+            z[i] = M[i] * r[i];
         }
 
         // rho_k = (r_k-1,z_k)
+        start_phase = omp_get_wtime();
         rho = dot(N, r, z, T, out);
+        end_phase = omp_get_wtime();
+        time_dot += end_phase - start_phase;
 
         if (k == 1) {
             // p_k = z_k
@@ -201,7 +205,11 @@ void Solve(
         } else {
             beta = rho / rho_prev;
             // p_k = z_k + beta_k * p_k-1
-            axpy(N, beta, p, z, T, out);            // z - временный буфер
+            start_phase = omp_get_wtime();
+            axpy(N, beta, p, z, T, out);
+            end_phase = omp_get_wtime();
+            time_axpy += end_phase - start_phase;
+
             #pragma omp parallel for
             for (int i = 0; i < N; ++i) {
                 p[i] = z[i];
@@ -209,16 +217,28 @@ void Solve(
         }
 
         // q_k = Ap_k
+        start_phase = omp_get_wtime();
         spmv(N, IA, JA, A, p, q, T, out);
+        end_phase = omp_get_wtime();
+        time_spmv += end_phase - start_phase;
 
         // alpha_k = rho_k/(p_k,q_k)
+        start_phase = omp_get_wtime();
         alpha = rho / dot(N, p, q, T, out);
+        end_phase = omp_get_wtime();
+        time_dot += end_phase - start_phase;
 
         // x_k = x_k-1 + alpha_k * p_k
+        start_phase = omp_get_wtime();
         axpy(N, alpha, p, x, T, out);
+        end_phase = omp_get_wtime();
+        time_axpy += end_phase - start_phase;
 
         // r_k = r_k-1 - alpha_k * q_k
+        start_phase = omp_get_wtime();
         axpy(N, -alpha, q, r, T, out);
+        end_phase = omp_get_wtime();
+        time_axpy += end_phase - start_phase;
 
         rho_prev = rho;
 
@@ -235,6 +255,9 @@ void Solve(
 
     end_total = omp_get_wtime();
     fprintf(out, "Solve:%f\n", end_total - start_total);
+    fprintf(out, "\tSPMV:%f\n", time_spmv);
+    fprintf(out, "\tAXPY:%f\n", time_axpy);
+    fprintf(out, "\tDOT:%f\n", time_dot);
 
     free(r);
     free(z);

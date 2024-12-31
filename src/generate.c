@@ -149,7 +149,10 @@ int Generate(
     free(neighbors_count);
 
     end_total = omp_get_wtime();
+    
+    int nnz = (*IA)[*N];
     fprintf(out, "Generate:%f\n", end_total - start_total);
+    fprintf(out, "\tNNZ:%d\n", nnz);
     
     return 0;
 }

@@ -5,16 +5,13 @@ env*
 inp*
 res*
 err*
+*log*
+report*
+*output*
+plot*
 
 main
-
-*output*
 
 *.o
 *~
 
-report*
-
-plot*
-
-pyscripts/
