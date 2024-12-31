@@ -13,7 +13,7 @@ int Fill(
     int T,
     FILE* out
 ) {
-    double start_total, end_total, start_phase, end_phase;
+    double start_total, end_total;
     start_total = omp_get_wtime();
     
     omp_set_num_threads(T);
