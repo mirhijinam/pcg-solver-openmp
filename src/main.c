@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 #include "custom.h"
 
 void print_usage(const char* program_name) {
@@ -58,6 +59,8 @@ int main(int argc, char* argv[]) {
         K2 = atoi(argv[4]);
         T = atoi(argv[5]);
 
+        omp_set_num_threads(T);
+
         for (int i = 6; i < argc; ++i) {
             if (strcmp(argv[i], "-d") == 0) {
                 debug_output = 1;
@@ -109,18 +112,16 @@ int main(int argc, char* argv[]) {
     }
 
     double eps = 1e-5;    // точность
-    int maxit = 1000;   // максимальное число итераций
+    int maxit = 1000;     // максимальное число итераций
     int iterations;       // фактическое число итераций
     double residual;      // невязка
 
     Solve(A, b, x, N, IA, JA, eps, maxit, &iterations, &residual, T, out);
 
-    // Основной вывод всегда идет в указанный файл или stdout
     fprintf(out, "\nSolution completed.\n");
     fprintf(out, "\tIterations:%d\n", iterations);
     fprintf(out, "\tResidual:%e\n", residual);
 
-    // Дополнительная отладочная информация только при debug_output = 1
     if (debug_output) {
         fprintf(out, "\nN = %d\n", N);
         fprintf(out, "IA: ");
@@ -142,7 +143,6 @@ int main(int argc, char* argv[]) {
         fclose(out);
     }
 
-    // Освобождение памяти
     free(IA);
     free(JA);
     free(A);

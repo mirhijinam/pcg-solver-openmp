@@ -16,8 +16,6 @@ int Fill(
     double start_total, end_total;
     start_total = omp_get_wtime();
     
-    omp_set_num_threads(T);
-
     *A = (double*)malloc(IA[N] * sizeof(double));
     *b = (double*)malloc(N * sizeof(double));
     

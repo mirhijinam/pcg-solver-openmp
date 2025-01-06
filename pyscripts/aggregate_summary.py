@@ -10,7 +10,7 @@ def parse_output_file(filepath):
         "AXPY": [],
         "DOT": [],
         "Iterations": [],
-        "Residual": [],
+        "Residual": [,
         "NNZ": []
     }
     with open(filepath, 'r') as file:
@@ -33,26 +33,26 @@ def parse_output_file(filepath):
                 data["NNZ"].append(int(line.split(":")[1]))
     return data
 
-def calculate_averages(data):
-    averages = {}
+def calculate_best_times(data):
+    best = {}
     for key, values in data.items():
-        averages[key] = sum(values) / len(values) if values else 0
-    return averages
+        best[key] = min(values) if values else 0
+    return best
 
-def write_summary_file(output_folder, Nx, T, averages):
+def write_summary_file(output_folder, Nx, T, best):
     output_filepath = os.path.join(output_folder, f"{Nx}_{T}.log")
     with open(output_filepath, 'w') as file:
         file.write(f"Nx_T:{Nx}_{T}\n\n")
-        file.write(f"Generate:{averages['Generate']:.6f}\n")
-        file.write(f"\tNNZ:{int(averages['NNZ']):d}\n")
-        file.write(f"Fill:{averages['Fill']:.6f}\n")
-        file.write(f"Solve:{sum([averages['SPMV'], averages['AXPY'], averages['DOT']]):.6f}\n")
-        file.write(f"\tSPMV:{averages['SPMV']:.6f}\n")
-        file.write(f"\tAXPY:{averages['AXPY']:.6f}\n")
-        file.write(f"\tDOT:{averages['DOT']:.6f}\n\n")
+        file.write(f"Generate:{best['Generate']:.6f}\n")
+        file.write(f"\tNNZ:{int(best['NNZ']):d}\n")
+        file.write(f"Fill:{best['Fill']:.6f}\n")
+        file.write(f"Solve:{sum([best['SPMV'], best['AXPY'], best['DOT']]):.6f}\n")
+        file.write(f"\tSPMV:{best['SPMV']:.6f}\n")
+        file.write(f"\tAXPY:{best['AXPY']:.6f}\n")
+        file.write(f"\tDOT:{best['DOT']:.6f}\n\n")
         file.write("Solution completed.\n")
-        file.write(f"\tIterations:{averages['Iterations']:.0f}\n")
-        file.write(f"\tResidual:{averages['Residual']:.6e}\n")
+        file.write(f"\tIterations:{best['Iterations']:.0f}\n")
+        file.write(f"\tResidual:{best['Residual']:.6e}\n")
 
 def write_nnz_file(output_folder, nnz_data):
     output_filepath = os.path.join(output_folder, "nnz_summary.csv")
@@ -90,9 +90,9 @@ def process_results(result_base_folder, summary_output_folder):
                     for key in aggregated_data:
                         aggregated_data[key].extend(file_data[key])
 
-            averages = calculate_averages(aggregated_data)
-            write_summary_file(summary_output_folder, Nx, T, averages)
-            nnz_data[(Nx, T)] = averages['NNZ']
+            best_times = calculate_best_times(aggregated_data)
+            write_summary_file(summary_output_folder, Nx, T, best_times)
+            nnz_data[(Nx, T)] = best_times['NNZ']
 
     write_nnz_file(summary_output_folder, nnz_data)
 

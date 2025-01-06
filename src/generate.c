@@ -18,8 +18,6 @@ int Generate(
     double start_total, end_total;
     start_total = omp_get_wtime();
     
-    omp_set_num_threads(T);
-    
     *N = (Nx + 1) * (Ny + 1);
     int* neighbors_count = (int*)calloc(*N, sizeof(int));
     if (!neighbors_count) return -1;
